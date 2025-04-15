@@ -1,4 +1,7 @@
 import os
+import json
+import pprint
+import urllib.request
 
 from dotenv import load_dotenv
 
@@ -12,6 +15,7 @@ MBTA_API_KEY = os.getenv("MBTA_API_KEY")
 # Useful base URLs (you need to add the appropriate parameters for each API request)
 MAPBOX_BASE_URL = "https://api.mapbox.com/geocoding/v5/mapbox.places"
 MBTA_BASE_URL = "https://api-v3.mbta.com/stops"
+
 
 
 # A little bit of scaffolding if you want to use it
