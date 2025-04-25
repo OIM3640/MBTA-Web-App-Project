@@ -2,7 +2,7 @@ import os
 import json
 import pprint
 import urllib.request
-
+import urllib.parse
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -37,17 +37,26 @@ def get_lat_lng(place_name: str) -> tuple[str, str]:
     See https://docs.mapbox.com/api/search/geocoding/ for Mapbox Geocoding API URL formatting requirements.
     """
     query = place_name
-    query = query.replace(" ", "%20") # In URL encoding, spaces are typically replaced with "%20". You can also use `urllib.parse.quote` function. 
-    url=f"{MAPBOX_BASE_URL}/{query}.json?access_token={MAPBOX_TOKEN}&types=poi,address,place"
+    query = urllib.parse.quote(place_name)
+    url = f"{MAPBOX_BASE_URL}/{query}.json?access_token={MAPBOX_TOKEN}&proximity=-71.058,42.360"
+
+
     data = get_json(url)
-    print(url) # Try this URL in your browser first
-    with urllib.request.urlopen(url) as resp:
-        response_text = resp.read().decode("utf-8")
-        response_data = json.loads(response_text)
-        pprint.pprint(response_data)
-        
+
+    # Debugging
+    print(url)
+    pprint.pprint(data)
 
     if data["features"]:
+        # Look specifically for Massachusetts results first
+        for feature in data["features"]:
+            place_name = feature["place_name"]
+            if "Massachusetts" in place_name:
+                coordinates = feature["geometry"]["coordinates"]
+                longitude, latitude = coordinates[0], coordinates[1]
+                return str(latitude), str(longitude)
+                
+        # If no Massachusetts results, use the first result
         coordinates = data["features"][0]["geometry"]["coordinates"]
         longitude, latitude = coordinates[0], coordinates[1]
         return str(latitude), str(longitude)
@@ -64,7 +73,7 @@ def get_nearest_station(latitude: str, longitude: str) -> tuple[str, bool]:
     data = get_json(url)
 
     if not data["data"]:
-        raise ValueError("Stop not found")
+        raise ValueError(f"No stops found near coordinates ({latitude},{longitude}). Pick a alocation near Boston Area.")
     nearest_stop = data["data"][0]
     station = nearest_stop["attributes"]["name"]
     wheelchair_accessible = nearest_stop["attributes"].get("wheelchair_boarding") == 1
